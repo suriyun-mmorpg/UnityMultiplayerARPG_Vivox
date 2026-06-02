@@ -62,7 +62,7 @@ namespace MultiplayerARPG
                     _positionalEntity.channelName = response.Response.channelId;
                     await Task.Delay((int)(_positionalEntity.reconnectDelay * 1000));
                 }
-                VivoxManager.Instance.OnReadyToSetTokenProvider += Instance_OnReadyToSetTokenProvider;
+                VivoxManager.OnReadyToSetTokenProvider += Instance_OnReadyToSetTokenProvider;
 #if !UNITY_SERVER
                 await _positionalEntity.Login();
 #endif
