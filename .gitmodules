@@ -1,0 +1,4 @@
+[submodule "VivoxIntegration"]
+	path = VivoxIntegration
+	url = https://github.com/insthync/vivox-integration.git
+	branch = main
