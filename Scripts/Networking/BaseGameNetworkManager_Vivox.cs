@@ -11,27 +11,19 @@ namespace MultiplayerARPG
         [System.Serializable]
         public struct VivoxMessageTypes
         {
-            public ushort channelIdRequestType;
             public ushort tokenRequestType;
         }
 
         [Header("Vivox")]
         public VivoxMessageTypes vivoxMessageTypes = new VivoxMessageTypes()
         {
-            channelIdRequestType = 1500,
             tokenRequestType = 1501,
         };
 
         [DevExtMethods("RegisterMessages")]
         public void RegisterMessages_Vivox()
         {
-            RegisterRequestToServer<RequestVivoxChannelIdMessage, ResponseVivoxChannelIdMessage>(vivoxMessageTypes.channelIdRequestType, HandleRequestVivoxChannelId);
             RegisterRequestToServer<RequestVivoxTokenMessage, ResponseVivoxTokenMessage>(vivoxMessageTypes.tokenRequestType, HandleRequestVivoxToken);
-        }
-
-        public async UniTask<AsyncResponseData<ResponseVivoxChannelIdMessage>> RequestVivoxChannelId(RequestVivoxChannelIdMessage request)
-        {
-            return await ClientSendRequestAsync<RequestVivoxChannelIdMessage, ResponseVivoxChannelIdMessage>(vivoxMessageTypes.channelIdRequestType, request);
         }
 
         public async UniTask<AsyncResponseData<ResponseVivoxTokenMessage>> RequestVivoxToken(RequestVivoxTokenMessage request)
@@ -39,30 +31,14 @@ namespace MultiplayerARPG
             return await ClientSendRequestAsync<RequestVivoxTokenMessage, ResponseVivoxTokenMessage>(vivoxMessageTypes.tokenRequestType, request);
         }
 
-        protected UniTaskVoid HandleRequestVivoxChannelId(
-            RequestHandlerData requestHandler, RequestVivoxChannelIdMessage request,
-            RequestProceedResultDelegate<ResponseVivoxChannelIdMessage> result)
-        {
-            if (!GameInstance.ServerUserHandlers.TryGetPlayerCharacter(requestHandler.ConnectionId, out IPlayerCharacterData playerCharacter))
-            {
-                result.InvokeError(new ResponseVivoxChannelIdMessage());
-                return default;
-            }
-
-            result.InvokeSuccess(new ResponseVivoxChannelIdMessage()
-            {
-                channelId = ChannelId,
-            });
-            return default;
-        }
-
         protected async UniTaskVoid HandleRequestVivoxToken(
             RequestHandlerData requestHandler, RequestVivoxTokenMessage request,
             RequestProceedResultDelegate<ResponseVivoxTokenMessage> result)
         {
-            if (!GameInstance.ServerUserHandlers.TryGetPlayerCharacter(requestHandler.ConnectionId, out IPlayerCharacterData playerCharacter))
+            if (!GameInstance.ServerUserHandlers.TryGetUserId(requestHandler.ConnectionId, out string userId))
             {
                 result.InvokeError(new ResponseVivoxTokenMessage());
+                return;
             }
             await VivoxManager.Instance.InitializeForServer();
 
@@ -70,23 +46,28 @@ namespace MultiplayerARPG
             switch (request.action)
             {
                 case VivoxAction.Login:
-                    token = VivoxManager.Instance.GenerateLoginToken(playerCharacter.Id);
+                    token = VivoxManager.Instance.GenerateLoginToken(userId);
                     break;
                 case VivoxAction.Join:
+                    if (!GameInstance.ServerUserHandlers.TryGetPlayerCharacter(requestHandler.ConnectionId, out IPlayerCharacterData playerCharacter))
+                    {
+                        result.InvokeError(new ResponseVivoxTokenMessage());
+                        return;
+                    }
                     // Allow to join local voice chat, party voice chat channels only
                     VivoxManager.Instance.GetChannelTypeAndId(request.channelUri, out VivoxChannelType chType, out string chId);
                     switch (chType)
                     {
                         case VivoxChannelType.Positional:
-                            if (string.Equals(ChannelId, chId))
-                                token = VivoxManager.Instance.GenerateJoinToken(playerCharacter.Id, request.channelUri);
+                            if (string.Equals(GetVivoxPositionalChannelId(ChannelId), chId))
+                                token = VivoxManager.Instance.GenerateJoinToken(userId, request.channelUri);
                             break;
                         case VivoxChannelType.NonPositional:
-                            if (playerCharacter.PartyId > 0 && string.Equals($"PARTY_{playerCharacter.PartyId}", request.channelUri))
-                                token = VivoxManager.Instance.GenerateJoinToken(playerCharacter.Id, request.channelUri);
+                            if (playerCharacter.PartyId > 0 && string.Equals(GetVivoxPartyChannelId(playerCharacter.PartyId), chId))
+                                token = VivoxManager.Instance.GenerateJoinToken(userId, request.channelUri);
                             break;
                         case VivoxChannelType.Echo:
-                            token = VivoxManager.Instance.GenerateJoinToken(playerCharacter.Id, request.channelUri);
+                            token = VivoxManager.Instance.GenerateJoinToken(userId, request.channelUri);
                             break;
                     }
                     break;
@@ -96,12 +77,23 @@ namespace MultiplayerARPG
             if (string.IsNullOrWhiteSpace(token))
             {
                 result.InvokeError(new ResponseVivoxTokenMessage());
+                return;
             }
 
             result.InvokeSuccess(new ResponseVivoxTokenMessage()
             {
                 token = token,
             });
+        }
+
+        public static string GetVivoxPositionalChannelId(string channelId)
+        {
+            return $"POS_{channelId}";
+        }
+
+        public static string GetVivoxPartyChannelId(int partyId)
+        {
+            return $"PTY_{partyId}";
         }
     }
 }
