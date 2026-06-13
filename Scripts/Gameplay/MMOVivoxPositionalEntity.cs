@@ -31,7 +31,7 @@ namespace MultiplayerARPG
         private async void OnDestroy()
         {
             _entity.onSetOwnerClient -= _entity_onSetOwnerClient;
-            VivoxManager.OnReadyToSetTokenProvider -= Instance_OnReadyToSetTokenProvider;
+            VivoxManager.TokenProvider = null;
             if (_entity.IsOwnerClient)
                 await _positionalEntity.Logout();
         }
@@ -64,17 +64,11 @@ namespace MultiplayerARPG
                     var response = await NetworkManager.RequestVivoxChannelId(new RequestVivoxChannelIdMessage());
                     _positionalEntity.channelName = response.Response.channelId;
                 } while (_positionalEntity.isReconnect && !_positionalEntity.IntendedToLogout && string.IsNullOrWhiteSpace(_positionalEntity.channelName));
-                VivoxManager.OnReadyToSetTokenProvider += Instance_OnReadyToSetTokenProvider;
+                VivoxManager.TokenProvider = this;
 #if !UNITY_SERVER
                 await _positionalEntity.Login();
 #endif
             }
-        }
-
-        private void Instance_OnReadyToSetTokenProvider()
-        {
-            VivoxManager.OnReadyToSetTokenProvider -= Instance_OnReadyToSetTokenProvider;
-            VivoxService.Instance.SetTokenProvider(this);
         }
 
         public async Task<string> GetTokenAsync(string issuer = null, TimeSpan? expiration = null, string targetUserUri = null, string action = null, string channelUri = null, string fromUserUri = null, string realm = null)
