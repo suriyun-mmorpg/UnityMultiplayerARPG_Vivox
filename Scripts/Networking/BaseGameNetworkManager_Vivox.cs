@@ -30,7 +30,7 @@ namespace MultiplayerARPG
         private VivoxTokenProvider _vivoxTokenProvider;
 
         [DevExtMethods("OnStartClient")]
-        public void OnStartClient_Vivox()
+        public void OnStartClient_Vivox(LiteNetLibClient client)
         {
             if (_vivoxTokenProvider == null)
                 _vivoxTokenProvider = gameObject.GetOrAddComponent<VivoxTokenProvider>();
