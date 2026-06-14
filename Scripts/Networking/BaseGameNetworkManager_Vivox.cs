@@ -20,6 +20,8 @@ namespace MultiplayerARPG
             tokenRequestType = 1501,
         };
 
+        public bool IsReadyForVivoxConnection { get; protected set; } = false;
+
         [DevExtMethods("RegisterMessages")]
         public void RegisterMessages_Vivox()
         {
@@ -34,14 +36,18 @@ namespace MultiplayerARPG
         {
             if (_vivoxTokenProvider == null)
                 _vivoxTokenProvider = gameObject.GetOrAddComponent<VivoxTokenProvider>();
-            _vivoxTokenProvider.SetEvents();
+        }
+
+        [DevExtMethods("HandleEnterGameResponse")]
+        public void HandleEnterGameResponse_Vivox(ResponseHandlerData responseHandler, AckResponseCode responseCode, EnterGameResponseMessage response)
+        {
+            IsReadyForVivoxConnection = true;
         }
 
         [DevExtMethods("OnStopClient")]
         public void OnStopClient_Vivox()
         {
-            if (_vivoxTokenProvider != null)
-                _vivoxTokenProvider.ClearEvents();
+            IsReadyForVivoxConnection = false;
         }
 #endif
 

@@ -21,7 +21,6 @@ namespace MultiplayerARPG
         private string _joinedPartyChannelId = string.Empty;
         private string _prevChannelId = string.Empty;
         private int _prevPartyId = 0;
-        private bool _enteredGame = false;
 
         private void Awake()
         {
@@ -36,30 +35,6 @@ namespace MultiplayerARPG
         private void OnDestroy()
         {
             VivoxManager.TokenProvider = null;
-            ClearEvents();
-        }
-
-        public void SetEvents()
-        {
-            ClearEvents();
-            ClientGenericActions.onEnterGameResponse += ClientGenericActions_onEnterGameResponse;
-            ClientGenericActions.onClientDisconnected += ClientGenericActions_onClientDisconnected;
-        }
-
-        public void ClearEvents()
-        {
-            ClientGenericActions.onEnterGameResponse -= ClientGenericActions_onEnterGameResponse;
-            ClientGenericActions.onClientDisconnected -= ClientGenericActions_onClientDisconnected;
-        }
-
-        public void ClientGenericActions_onEnterGameResponse(AckResponseCode responseCode)
-        {
-            _enteredGame = responseCode == AckResponseCode.Success;
-        }
-
-        public void ClientGenericActions_onClientDisconnected(DisconnectReason reason, SocketError socketError, UITextKeys message)
-        {
-            _enteredGame = false;
         }
 
         private void Update()
@@ -175,7 +150,7 @@ namespace MultiplayerARPG
             if (!VivoxManager.IsLoggedIn)
                 return;
 
-            if (!_enteredGame)
+            if (!NetworkManager.IsReadyForVivoxConnection)
                 return;
 
             int currentPartyId = GameInstance.PlayingCharacterEntity.PartyId;
@@ -242,7 +217,7 @@ namespace MultiplayerARPG
             if (!VivoxManager.IsLoggedIn)
                 return;
 
-            if (!_enteredGame)
+            if (!NetworkManager.IsReadyForVivoxConnection)
                 return;
 
             string currentChannelId = NetworkManager.ChannelId;
@@ -309,7 +284,7 @@ namespace MultiplayerARPG
             if (VivoxManager.CurrentInitializeState != VivoxManager.InitializeState.Initialized)
                 return;
 
-            if (!_enteredGame)
+            if (!NetworkManager.IsReadyForVivoxConnection)
                 return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
