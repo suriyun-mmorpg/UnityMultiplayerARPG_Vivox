@@ -23,9 +23,27 @@ namespace MultiplayerARPG
         [DevExtMethods("RegisterMessages")]
         public void RegisterMessages_Vivox()
         {
-            gameObject.GetOrAddComponent<VivoxTokenProvider>();
             RegisterRequestToServer<RequestVivoxTokenMessage, ResponseVivoxTokenMessage>(vivoxMessageTypes.tokenRequestType, HandleRequestVivoxToken);
         }
+
+#if UNITY_EDITOR || !UNITY_SERVER
+        private VivoxTokenProvider _vivoxTokenProvider;
+
+        [DevExtMethods("OnStartClient")]
+        public void OnStartClient_Vivox()
+        {
+            if (_vivoxTokenProvider == null)
+                _vivoxTokenProvider = gameObject.GetOrAddComponent<VivoxTokenProvider>();
+            _vivoxTokenProvider.SetEvents();
+        }
+
+        [DevExtMethods("OnStopClient")]
+        public void OnStopClient_Vivox()
+        {
+            if (_vivoxTokenProvider != null)
+                _vivoxTokenProvider.ClearEvents();
+        }
+#endif
 
         public async UniTask<AsyncResponseData<ResponseVivoxTokenMessage>> RequestVivoxToken(RequestVivoxTokenMessage request)
         {

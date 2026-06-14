@@ -26,8 +26,6 @@ namespace MultiplayerARPG
         private void Awake()
         {
             VivoxManager.TokenProvider = this;
-            ClientGenericActions.onEnterGameResponse += ClientGenericActions_onEnterGameResponse;
-            ClientGenericActions.onClientDisconnected += ClientGenericActions_onClientDisconnected;
         }
 
         private async void Start()
@@ -38,16 +36,28 @@ namespace MultiplayerARPG
         private void OnDestroy()
         {
             VivoxManager.TokenProvider = null;
+            ClearEvents();
+        }
+
+        public void SetEvents()
+        {
+            ClearEvents();
+            ClientGenericActions.onEnterGameResponse += ClientGenericActions_onEnterGameResponse;
+            ClientGenericActions.onClientDisconnected += ClientGenericActions_onClientDisconnected;
+        }
+
+        public void ClearEvents()
+        {
             ClientGenericActions.onEnterGameResponse -= ClientGenericActions_onEnterGameResponse;
             ClientGenericActions.onClientDisconnected -= ClientGenericActions_onClientDisconnected;
         }
 
-        private void ClientGenericActions_onEnterGameResponse(AckResponseCode responseCode)
+        public void ClientGenericActions_onEnterGameResponse(AckResponseCode responseCode)
         {
             _enteredGame = responseCode == AckResponseCode.Success;
         }
 
-        private void ClientGenericActions_onClientDisconnected(DisconnectReason reason, SocketError socketError, UITextKeys message)
+        public void ClientGenericActions_onClientDisconnected(DisconnectReason reason, SocketError socketError, UITextKeys message)
         {
             _enteredGame = false;
         }
