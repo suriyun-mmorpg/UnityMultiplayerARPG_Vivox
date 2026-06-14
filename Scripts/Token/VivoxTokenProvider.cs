@@ -1,15 +1,18 @@
 #if UNITY_EDITOR || !UNITY_SERVER
 using Insthync.UnityVivoxIntegration;
+using LiteNetLib;
+using LiteNetLibManager;
 using System;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using Unity.Services.Vivox;
 using UnityEngine;
 
-namespace MultiplayerARPG.MMO
+namespace MultiplayerARPG
 {
-    public class MMOVivoxTokenProvider : MonoBehaviour, IVivoxTokenProvider
+    public class VivoxTokenProvider : MonoBehaviour, IVivoxTokenProvider
     {
-        MapNetworkManager NetworkManager => BaseGameNetworkManager.Singleton as MapNetworkManager;
+        BaseGameNetworkManager NetworkManager => BaseGameNetworkManager.Singleton;
         private bool _isAuthorizing = false;
         private bool _isJoiningOrLeavingPositionalChannel = false;
         private bool _isJoiningOrLeavingPartyChannel = false;
@@ -18,10 +21,13 @@ namespace MultiplayerARPG.MMO
         private string _joinedPartyChannelId = string.Empty;
         private string _prevChannelId = string.Empty;
         private int _prevPartyId = 0;
+        private bool _enteredGame = false;
 
         private void Awake()
         {
             VivoxManager.TokenProvider = this;
+            ClientGenericActions.onEnterGameResponse += ClientGenericActions_onEnterGameResponse;
+            ClientGenericActions.onClientDisconnected += ClientGenericActions_onClientDisconnected;
         }
 
         private async void Start()
@@ -32,6 +38,18 @@ namespace MultiplayerARPG.MMO
         private void OnDestroy()
         {
             VivoxManager.TokenProvider = null;
+            ClientGenericActions.onEnterGameResponse -= ClientGenericActions_onEnterGameResponse;
+            ClientGenericActions.onClientDisconnected -= ClientGenericActions_onClientDisconnected;
+        }
+
+        private void ClientGenericActions_onEnterGameResponse(AckResponseCode responseCode)
+        {
+            _enteredGame = responseCode == AckResponseCode.Success;
+        }
+
+        private void ClientGenericActions_onClientDisconnected(DisconnectReason reason, SocketError socketError, UITextKeys message)
+        {
+            _enteredGame = false;
         }
 
         private void Update()
@@ -147,7 +165,7 @@ namespace MultiplayerARPG.MMO
             if (!VivoxManager.IsLoggedIn)
                 return;
 
-            if (!NetworkManager.IsClientConnected)
+            if (!_enteredGame)
                 return;
 
             int currentPartyId = GameInstance.PlayingCharacterEntity.PartyId;
@@ -214,7 +232,7 @@ namespace MultiplayerARPG.MMO
             if (!VivoxManager.IsLoggedIn)
                 return;
 
-            if (!NetworkManager.IsClientConnected)
+            if (!_enteredGame)
                 return;
 
             string currentChannelId = NetworkManager.ChannelId;
@@ -281,7 +299,7 @@ namespace MultiplayerARPG.MMO
             if (VivoxManager.CurrentInitializeState != VivoxManager.InitializeState.Initialized)
                 return;
 
-            if (!NetworkManager.IsClientConnected)
+            if (!_enteredGame)
                 return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

@@ -23,6 +23,7 @@ namespace MultiplayerARPG
         [DevExtMethods("RegisterMessages")]
         public void RegisterMessages_Vivox()
         {
+            gameObject.GetOrAddComponent<VivoxTokenProvider>();
             RegisterRequestToServer<RequestVivoxTokenMessage, ResponseVivoxTokenMessage>(vivoxMessageTypes.tokenRequestType, HandleRequestVivoxToken);
         }
 
