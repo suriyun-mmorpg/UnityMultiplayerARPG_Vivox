@@ -20,7 +20,7 @@ namespace MultiplayerARPG
             tokenRequestType = 1501,
         };
 
-        public bool IsReadyForVivoxConnection { get; protected set; } = false;
+        public bool IsReadyForVivoxConnection { get; set; } = false;
 
         [DevExtMethods("RegisterMessages")]
         public void RegisterMessages_Vivox()

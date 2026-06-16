@@ -1,9 +1,6 @@
 #if UNITY_EDITOR || !UNITY_SERVER
 using Insthync.UnityVivoxIntegration;
-using LiteNetLib;
-using LiteNetLibManager;
 using System;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 using Unity.Services.Vivox;
 using UnityEngine;
@@ -364,12 +361,14 @@ namespace MultiplayerARPG
         {
             VivoxAction vivoxAction;
             string channelId;
-            if (string.Equals(action, "login"))
+            bool isLogin = string.Equals(action, "login");
+            bool isJoin = string.Equals(action, "join");
+            if (isLogin)
             {
                 vivoxAction = VivoxAction.Login;
                 channelId = string.Empty;
             }
-            else if (string.Equals(action, "join"))
+            else if (isJoin)
             {
                 vivoxAction = VivoxAction.Join;
                 channelId = channelUri;
@@ -385,8 +384,12 @@ namespace MultiplayerARPG
             });
             if (!response.IsSuccess)
             {
+                if (isLogin)
+                    NetworkManager.IsReadyForVivoxConnection = false;
                 return string.Empty;
             }
+            if (isLogin && string.IsNullOrWhiteSpace(response.Response.token))
+                NetworkManager.IsReadyForVivoxConnection = false;
             return response.Response.token;
         }
     }
