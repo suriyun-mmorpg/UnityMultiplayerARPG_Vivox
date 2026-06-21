@@ -199,6 +199,7 @@ namespace MultiplayerARPG
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(ex);
 #endif
+                await VivoxService.Instance.LeaveChannelAsync(joiningChannelId);
             }
             _isJoiningOrLeavingPartyChannel = false;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -266,6 +267,7 @@ namespace MultiplayerARPG
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(ex);
 #endif
+                await VivoxService.Instance.LeaveChannelAsync(joiningChannelId);
             }
             _isJoiningOrLeavingPositionalChannel = false;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
