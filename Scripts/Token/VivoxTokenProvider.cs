@@ -62,7 +62,17 @@ namespace MultiplayerARPG
                     JoinPositionalChannelIfNotJoined();
                     if (!string.IsNullOrWhiteSpace(_joinedPositionalChannelId))
                     {
-                        VivoxService.Instance.Set3DPosition(GameInstance.PlayingCharacterEntity.EntityGameObject, _joinedPositionalChannelId);
+                        try
+                        {
+                            VivoxService.Instance.Set3DPosition(GameInstance.PlayingCharacterEntity.EntityGameObject, _joinedPositionalChannelId);
+                        }
+                        catch (Exception ex)
+                        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                            Debug.LogError(ex);
+#endif
+                    		LeavePositionalChannelIfNotLeft();
+                        }
                     }
                 }
                 else
